@@ -4,29 +4,57 @@ export default function JobForm({ onAddJob }) {
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("Applied");
+  const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const validate = () => {
+    if (!company.trim() || company.trim().length < 2) return 'Company name must be at least 2 characters.';
+    if (!role.trim() || role.trim().length < 2) return 'Role must be at least 2 characters.';
+    const validStatuses = ['Applied', 'Interview', 'Offer', 'Rejected'];
+    if (!validStatuses.includes(status)) return 'Invalid status selected.';
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
 
-    if (!company || !role) return;
+    const validationError = validate();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
 
     const newJob = {
       id: Date.now(),
-      company,
-      role,
+      company: company.trim(),
+      role: role.trim(),
       status,
       appliedDate: new Date().toISOString().slice(0, 10),
     };
 
-    onAddJob(newJob);
-    setCompany("");
-    setRole("");
-    setStatus("Applied");
+    setIsSubmitting(true);
+    try {
+      await onAddJob(newJob);
+      setCompany("");
+      setRole("");
+      setStatus("Applied");
+      setFormError(null);
+    } catch (err) {
+      setFormError(err?.message || 'Failed to add job.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
       <h2 className="text-xl font-semibold mb-4 text-gray-900">Add New Job</h2>
+
+      {formError && (
+        <div className="mb-4 text-sm text-red-600">{formError}</div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Company</label>
@@ -65,9 +93,10 @@ export default function JobForm({ onAddJob }) {
         </div>
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          disabled={isSubmitting}
+          className={`w-full ${isSubmitting ? 'bg-indigo-400' : 'bg-indigo-600'} text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
         >
-          Add Job
+          {isSubmitting ? 'Adding…' : 'Add Job'}
         </button>
       </form>
     </div>
