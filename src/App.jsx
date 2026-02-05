@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Header from "./components/Header";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import FilterBar from "./components/FilterBar";
@@ -96,7 +97,10 @@ export default function App() {
   });
 
   return (
-    <div className="relative min-h-screen py-8 bg-hero bg-cover bg-center">
+    <div
+      className="relative min-h-screen py-8 bg-hero bg-cover bg-center"
+    >
+      {/* <Header /> */}
       {/* subtle dark overlay so content stays readable */}
       <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 

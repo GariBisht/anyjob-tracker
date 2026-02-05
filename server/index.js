@@ -12,55 +12,115 @@ app.use(express.json());
 
 function loadJobs() {
   try {
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+      return [];
+    }
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     return JSON.parse(raw || '[]');
   } catch (err) {
+    console.error('Failed to load jobs file:', err);
     return [];
   }
 }
 
 function saveJobs(jobs) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(jobs, null, 2));
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(jobs, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error('Failed to save jobs file:', err);
+    throw new Error('Failed to save jobs');
+  }
 }
 
-app.get('/api/jobs', (req, res) => {
-  const jobs = loadJobs();
-  res.json(jobs);
-});
+const VALID_STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
+function validateJobPayload(payload) {
+  if (!payload) return 'Missing job payload.';
+  if (!payload.company || String(payload.company).trim().length < 2) return 'Company is required and must be at least 2 characters.';
+  if (!payload.role || String(payload.role).trim().length < 2) return 'Role is required and must be at least 2 characters.';
+  if (payload.status && !VALID_STATUSES.includes(payload.status)) return 'Invalid status.';
+  return null;
+}
 
-app.post('/api/jobs', (req, res) => {
-  const jobs = loadJobs();
-  const job = req.body;
-
-  if (!job || !job.id) {
-    return res.status(400).json({ error: 'Job must include an id' });
+app.get('/api/jobs', (req, res, next) => {
+  try {
+    const jobs = loadJobs();
+    res.json(jobs);
+  } catch (err) {
+    next(err);
   }
-
-  jobs.push(job);
-  saveJobs(jobs);
-  res.status(201).json(job);
 });
 
-app.put('/api/jobs/:id', (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const jobs = loadJobs();
-  const index = jobs.findIndex((j) => j.id === id);
-  if (index === -1) return res.status(404).json({ error: 'Not found' });
+app.post('/api/jobs', (req, res, next) => {
+  try {
+    const payload = req.body;
+    const validationError = validateJobPayload(payload);
+    if (validationError) return res.status(400).json({ error: validationError });
 
-  const updated = { ...jobs[index], ...req.body };
-  jobs[index] = updated;
-  saveJobs(jobs);
-  res.json(updated);
+    const jobs = loadJobs();
+    const id = payload.id ? Number(payload.id) : Date.now();
+    const newJob = {
+      id,
+      company: String(payload.company).trim(),
+      role: String(payload.role).trim(),
+      status: payload.status || 'Applied',
+      appliedDate: payload.appliedDate || new Date().toISOString().slice(0, 10),
+    };
+
+    jobs.push(newJob);
+    saveJobs(jobs);
+    res.status(201).json(newJob);
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.delete('/api/jobs/:id', (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  let jobs = loadJobs();
-  const beforeLength = jobs.length;
-  jobs = jobs.filter((j) => j.id !== id);
-  if (jobs.length === beforeLength) return res.status(404).json({ error: 'Not found' });
-  saveJobs(jobs);
-  res.status(204).end();
+app.put('/api/jobs/:id', (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid id' });
+
+    const payload = req.body;
+    if (payload.status && !VALID_STATUSES.includes(payload.status)) return res.status(400).json({ error: 'Invalid status' });
+
+    const jobs = loadJobs();
+    const index = jobs.findIndex((j) => Number(j.id) === id);
+    if (index === -1) return res.status(404).json({ error: 'Not found' });
+
+    const updated = { ...jobs[index], ...payload };
+    jobs[index] = updated;
+    saveJobs(jobs);
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/jobs/:id', (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid id' });
+
+    let jobs = loadJobs();
+    const beforeLength = jobs.length;
+    jobs = jobs.filter((j) => Number(j.id) !== id);
+    if (jobs.length === beforeLength) return res.status(404).json({ error: 'Not found' });
+    saveJobs(jobs);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// health
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// central error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  const status = err.status || 500;
+  res.status(status).json({ error: err.message || 'Internal server error' });
 });
 
 function startServer(port, attempts = 0) {
