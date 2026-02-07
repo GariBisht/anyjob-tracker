@@ -49,7 +49,7 @@ export default function JobForm({ onAddJob }) {
 
   return (
     <div className="card mb-8">
-      <h2 className="text-xl font-semibold mb-4 text-gray-900">Add New Job</h2>
+      <h2 className="text-xl font-semibold mb-4 text-red-900 text-center">Add New Job</h2>
 
       {formError && (
         <div className="mb-4 text-sm text-red-600">{formError}</div>
@@ -91,10 +91,11 @@ export default function JobForm({ onAddJob }) {
             <option>Rejected</option>
           </select>
         </div>
-        <button
+        <br/>
+        <button 
           type="submit"
           disabled={isSubmitting}
-          className={`w-full ${isSubmitting ? 'opacity-70' : ''} btn-primary`} 
+          className={`w-short ${isSubmitting ? 'opacity-60' : ''} btn-primary`} 
         >
           {isSubmitting ? 'Adding…' : 'Add Job'}
         </button>
