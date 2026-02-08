@@ -7,106 +7,101 @@ import FilterBar from "./components/FilterBar";
 export default function App() {
  
  
- 
- 
- 
- 
- 
-  // const [jobs, setJobs] = useState([]);
-  // const [statusFilter, setStatusFilter] = useState("All");
-  // const [search, setSearch] = useState("");
-  // const [loading, setLoading] = useState(false);
-  // const [error, setError] = useState(null);
+   const [jobs, setJobs] = useState([]);
+   const [statusFilter, setStatusFilter] = useState("All");
+   const [search, setSearch] = useState("");
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState(null);
 
-  // const fetchJobs = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch('/api/jobs');
-  //     if (!res.ok) throw new Error('Failed to fetch jobs');
-  //     const data = await res.json();
-  //     setJobs(data);
-  //   } catch (err) {
-  //     setError(err.message || 'Error');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+   const fetchJobs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/jobs');
+      if (!res.ok) throw new Error('Failed to fetch jobs');
+      const data = await res.json();
+      setJobs(data);
+     } catch (err) {
+       setError(err.message || 'Error');
+     } finally {
+     setLoading(false);
+     }
+  };
 
-  // useEffect(() => {
-  //   fetchJobs();
-  // }, []);
+ useEffect(() => {
+     fetchJobs();
+   }, []);
 
-  // const addJob = async (job) => {
-  //   // Basic defensive validation (in addition to form validation)
-  //   if (!job || !job.company || !job.role) {
-  //     const msg = 'Company and Role are required.';
-  //     setError(msg);
-  //     throw new Error(msg);
-  //   }
+   const addJob = async (job) => {
+     // Basic defensive validation (in addition to form validation)
+     if (!job || !job.company || !job.role) {
+       const msg = 'Company and Role are required.';
+       setError(msg);
+     throw new Error(msg);
+     }
 
-  //   try {
-  //     const res = await fetch('/api/jobs', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(job),
-  //     });
+   try {
+     const res = await fetch('/api/jobs', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(job),
+      });
 
-  //     if (!res.ok) {
-  //       // try to read error message from server
-  //       const body = await res.json().catch(() => null);
-  //       const msg = body?.error || `Failed to add job (status ${res.status}).`;
-  //       setError(msg);
-  //       throw new Error(msg);
-  //     }
+       if (!res.ok) {
+         // try to read error message from server
+         const body = await res.json().catch(() => null);
+         const msg = body?.error || `Failed to add job (status ${res.status}).`;
+         setError(msg);
+         throw new Error(msg);
+       }
 
-  //     const created = await res.json();
-  //     setJobs((prev) => [...prev, created]);
-  //     return created;
-  //   } catch (err) {
-  //     setError(err.message || 'Error');
-  //     throw err; // rethrow so callers (forms) can show message
-  //   }
-  // };
+       const created = await res.json();
+       setJobs((prev) => [...prev, created]);
+       return created;
+     } catch (err) {
+      setError(err.message || 'Error');
+       throw err; // rethrow so callers (forms) can show message
+     }
+   };
 
-  // const deleteJob = async (id) => {
-  //   try {
-  //     const res = await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
-  //     if (!res.ok && res.status !== 204) throw new Error('Failed to delete');
-  //     setJobs((prev) => prev.filter((job) => job.id !== id));
-  //   } catch (err) {
-  //     setError(err.message || 'Error');
-  //   }
-  // };
+   const deleteJob = async (id) => {
+     try {
+      const res = await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete');
+      setJobs((prev) => prev.filter((job) => job.id !== id));
+     } catch (err) {
+       setError(err.message || 'Error');
+   }
+ };
 
-  // const updateStatus = async (id, status) => {
-  //   try {
-  //     const res = await fetch(`/api/jobs/${id}`, {
-  //       method: 'PUT',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ status }),
-  //     });
-  //     if (!res.ok) throw new Error('Failed to update');
-  //     const updated = await res.json();
-  //     setJobs((prev) => prev.map((j) => (j.id === id ? updated : j)));
-  //   } catch (err) {
-  //     setError(err.message || 'Error');
-  //   }
-  // };
+ const updateStatus = async (id, status) => {
+   try {
+     const res = await fetch(`/api/jobs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+    });
+     if (!res.ok) throw new Error('Failed to update');
+     const updated = await res.json();
+     setJobs((prev) => prev.map((j) => (j.id === id ? updated : j)));
+    } catch (err) {
+      setError(err.message || 'Error');
+}
+  };
 
-  // const filteredJobs = jobs.filter((job) => {
-  //   const matchesStatus =
-  //     statusFilter === "All" || job.status === statusFilter;
-  //   const matchesSearch =
-  //     job.company.toLowerCase().includes(search.toLowerCase()) ||
-  //     job.role.toLowerCase().includes(search.toLowerCase());
+   const filteredJobs = jobs.filter((job) => {
+     const matchesStatus =
+       statusFilter === "All" || job.status === statusFilter;
+   const matchesSearch =
+     job.company.toLowerCase().includes(search.toLowerCase()) ||
+    job.role.toLowerCase().includes(search.toLowerCase());
 
-  //   return matchesStatus && matchesSearch;
-  // });
+  return matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
-    {/* <div
+    <div
       className="relative min-h-screen py-8 bg-hero bg-cover bg-center"
     >
     
@@ -138,8 +133,8 @@ export default function App() {
             onUpdateStatus={updateStatus}
           />
         )}
-      </div> */}
-      {/* </div> */}
+      </div> 
+    </div> 
     </div>
   );
 }
